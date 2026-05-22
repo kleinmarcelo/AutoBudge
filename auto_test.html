@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBudge - Suite de Auto-Testes Visual</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f0f12;
+            --card-bg: rgba(22, 22, 28, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #f26419;
+            --primary-hover: #f67e3a;
+            --success: #38b000;
+            --danger: #d90429;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --glow: 0 0 20px rgba(242, 100, 25, 0.2);
+            --font: 'Inter', sans-serif;
+            --font-title: 'Outfit', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(242, 100, 25, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(56, 176, 0, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .test-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), var(--glow);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-box {
+            width: 70px;
+            height: 70px;
+            background: rgba(242, 100, 25, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 0 15px rgba(242, 100, 25, 0.3);
+            font-size: 2rem;
+            color: var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(242, 100, 25, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(242, 100, 25, 0.5); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(242, 100, 25, 0.3); }
+        }
+
+        .header h1 {
+            font-family: var(--font-title);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header h1 span {
+            color: var(--primary);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .summary-dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-val {
+            font-family: var(--font-title);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-val.passed { color: var(--success); }
+        .stat-val.failed { color: var(--danger); }
+        .stat-val.total { color: var(--primary); }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-title {
+            font-family: var(--font-title);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .test-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Scrollbar estilizada */
+        .test-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .test-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+        .test-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+        .test-list::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .test-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .test-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .test-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .test-icon {
+            font-size: 1.1rem;
+        }
+
+        .test-icon.passed { color: var(--success); }
+        .test-icon.failed { color: var(--danger); }
+
+        .test-desc {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .test-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .test-badge.passed {
+            background: rgba(56, 176, 0, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(56, 176, 0, 0.3);
+        }
+
+        .test-badge.failed {
+            background: rgba(217, 4, 41, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(217, 4, 41, 0.3);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            font-family: var(--font-title);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.8rem 1.8rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--text);
+            box-shadow: 0 4px 15px rgba(242, 100, 25, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(242, 100, 25, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="test-container">
+        <div class="header">
+            <div class="logo-box">
+                <i class="fa-solid fa-vial-circle-check"></i>
+            </div>
+            <h1>AutoBudge <span>Tester</span></h1>
+            <p>Suite de Testes Unitários de Funções de Negócios e Mapeamento Cloud</p>
+        </div>
+
+        <div class="summary-dashboard">
+            <div class="stat-card">
+                <div class="stat-val total" id="statTotal">0</div>
+                <div class="stat-label">Total Testados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val passed" id="statPassed">0</div>
+                <div class="stat-label">Passaram</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val failed" id="statFailed">0</div>
+                <div class="stat-label">Falharam</div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-list-check"></i> Relatório de Asserções Executadas
+        </div>
+
+        <div class="test-list" id="testList">
+            <!-- Os testes serão renderizados aqui dinamicamente -->
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="runAllTests()">
+                <i class="fa-solid fa-rotate"></i> Rodar Testes Novamente
+            </button>
+            <a href="index.html" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Voltar para o App
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // IMPLEMENTAÇÕES DE TESTE ISOLADAS IGUAIS AO APP.JS
+        function mapClientToDb(client, userId) {
+            return {
+                id: client.id,
+                user_id: userId,
+                name: client.name,
+                phone: client.phone,
+                email: client.email || null,
+                vehicle_model: client.vehicleModel,
+                vehicle_plate: client.vehiclePlate,
+                vehicle_color: client.vehicleColor
+            };
+        }
+
+        function mapClientFromDb(dbClient) {
+            return {
+                id: dbClient.id,
+                name: dbClient.name,
+                phone: dbClient.phone,
+                email: dbClient.email || "",
+                vehicleModel: dbClient.vehicle_model,
+                vehiclePlate: dbClient.vehicle_plate,
+                vehicleColor: dbClient.vehicle_color
+            };
+        }
+
+        function mapBudgetToDb(budget, userId) {
+            return {
+                id: budget.id,
+                user_id: userId,
+                client_id: budget.clientId,
+                date: budget.date,
+                vehicle_model: budget.vehicleModel || null,
+                vehicle_plate: budget.vehiclePlate || null,
+                vehicle_color: budget.vehicleColor || null,
+                items: budget.items,
+                discount: Number(budget.discount) || 0,
+                total: Number(budget.total) || 0,
+                status: budget.status,
+                payment: budget.payment || null,
+                delivery: budget.delivery || null,
+                warranty: budget.warranty || null,
+                notice: budget.notice || null
+            };
+        }
+
+        function mapBudgetFromDb(dbBudget) {
+            return {
+                id: dbBudget.id,
+                clientId: dbBudget.client_id,
+                date: dbBudget.date,
+                vehicleModel: dbBudget.vehicle_model || "",
+                vehiclePlate: dbBudget.vehicle_plate || "",
+                vehicleColor: dbBudget.vehicle_color || "",
+                items: dbBudget.items,
+                discount: Number(dbBudget.discount) || 0,
+                total: Number(dbBudget.total) || 0,
+                status: dbBudget.status,
+                payment: dbBudget.payment || "",
+                delivery: dbBudget.delivery || "",
+                warranty: dbBudget.warranty || "",
+                notice: dbBudget.notice || ""
+            };
+        }
+
+        function mapCompanyToDb(comp, userId) {
+            return {
+                user_id: userId,
+                name: comp.name,
+                cnpj: comp.cnpj || null,
+                phone: comp.phone,
+                email: comp.email || null,
+                address: comp.address || null,
+                logo: comp.logo || null
+            };
+        }
+
+        function mapCompanyFromDb(dbComp) {
+            return {
+                name: dbComp.name || "",
+                cnpj: dbComp.cnpj || "",
+                phone: dbComp.phone || "",
+                email: dbComp.email || "",
+                address: dbComp.address || "",
+                logo: dbComp.logo || ""
+            };
+        }
+
+        function mapSettingsToDb(sett, userId) {
+            return {
+                user_id: userId,
+                retention_days: Number(sett.retentionDays) || 180,
+                default_payment: sett.defaultPayment || null,
+                default_delivery: sett.defaultDelivery || null,
+                default_warranty: sett.defaultWarranty || null,
+                default_notice: sett.defaultNotice || null
+            };
+        }
+
+        function mapSettingsFromDb(dbSett) {
+            return {
+                retentionDays: Number(dbSett.retention_days) || 180,
+                defaultPayment: dbSett.default_payment || "",
+                defaultDelivery: dbSett.default_delivery || "",
+                defaultWarranty: dbSett.default_warranty || "",
+                defaultNotice: dbSett.default_notice || ""
+            };
+        }
+
+        function getNextBudgetSequentialNumber(budgetsList) {
+            if (budgetsList.length === 0) return "0001";
+            const numbers = budgetsList.map(b => {
+                const cleanId = b.id.replace('b-', '');
+                return parseInt(cleanId) || 0;
+            });
+            const maxNum = Math.max(...numbers, 0);
+            const nextNum = maxNum + 1;
+            return String(nextNum).padStart(4, '0');
+        }
+
+        function simulateBudgetCaclulate(items, discount) {
+            const subtotal = items.reduce((sum, item) => sum + (item.qtd * item.unitValue), 0);
+            const total = Math.max(0, subtotal - discount);
+            return { subtotal, total };
+        }
+
+        // Framework de asserção visual
+        let stats = { total: 0, passed: 0, failed: 0 };
+        const testListEl = document.getElementById("testList");
+
+        function addVisualResult(passed, message) {
+            stats.total++;
+            if (passed) stats.passed++; else stats.failed++;
+
+            const testItem = document.createElement("div");
+            testItem.className = "test-item";
+
+            testItem.innerHTML = `
+                <div class="test-info">
+                    <i class="test-icon ${passed ? 'passed fa-solid fa-circle-check' : 'failed fa-solid fa-circle-xmark'}"></i>
+                    <span class="test-desc">${message}</span>
+                </div>
+                <span class="test-badge ${passed ? 'passed' : 'failed'}">${passed ? 'pass' : 'fail'}</span>
+            `;
+
+            testListEl.appendChild(testItem);
+        }
+
+        function updateStatsUI() {
+            document.getElementById("statTotal").innerText = stats.total;
+            document.getElementById("statPassed").innerText = stats.passed;
+            document.getElementById("statFailed").innerText = stats.failed;
+        }
+
+        function runAllTests() {
+            // Reset
+            stats = { total: 0, passed: 0, failed: 0 };
+            testListEl.innerHTML = "";
+
+            // Mocks
+            const clientMock = {
+                id: "c-12345",
+                name: "Marcelo Klein",
+                phone: "(11) 99999-9999",
+                email: "marcelo@test.com",
+                vehicleModel: "Golf GTI",
+                vehiclePlate: "KLE1I23",
+                vehicleColor: "Cinza Carbono"
+            };
+            const userIdMock = "user-uuid-12345";
+
+            // Executar Asserções
+            // 1. Mapeadores Supabase Clientes
+            const dbClient = mapClientToDb(clientMock, userIdMock);
+            addVisualResult(dbClient.id === "c-12345", "mapClientToDb: ID de cliente conservado");
+            addVisualResult(dbClient.user_id === userIdMock, "mapClientToDb: user_id associado corretamente");
+            addVisualResult(dbClient.vehicle_model === "Golf GTI", "mapClientToDb: vehicleModel mapeado para vehicle_model");
+            
+            const clientFromDb = mapClientFromDb(dbClient);
+            addVisualResult(clientFromDb.vehicleModel === "Golf GTI", "mapClientFromDb: vehicle_model revertido para vehicleModel");
+            addVisualResult(clientFromDb.vehiclePlate === "KLE1I23", "mapClientFromDb: vehicle_plate revertido para vehiclePlate");
+
+            // 2. Mapeadores Supabase Orçamentos
+            const budgetMock = {
+                id: "b-0010",
+                clientId: "c-12345",
+                date: "2026-05-22",
+                vehicleModel: "Golf GTI",
+                vehiclePlate: "KLE1I23",
+                vehicleColor: "Cinza Carbono",
+                items: [{ description: "Lavagem Premium", qtd: 1, unitValue: 150 }],
+                discount: 20,
+                total: 130,
+                status: "Aprovado",
+                payment: "Pix"
+            };
+            const dbBudget = mapBudgetToDb(budgetMock, userIdMock);
+            addVisualResult(dbBudget.client_id === "c-12345", "mapBudgetToDb: clientId mapeado para client_id");
+            addVisualResult(dbBudget.discount === 20, "mapBudgetToDb: discount convertido para número");
+            addVisualResult(dbBudget.total === 130, "mapBudgetToDb: total convertido para número");
+
+            const budgetFromDb = mapBudgetFromDb(dbBudget);
+            addVisualResult(budgetFromDb.clientId === "c-12345", "mapBudgetFromDb: client_id revertido para clientId");
+            addVisualResult(budgetFromDb.total === 130, "mapBudgetFromDb: total revertido como número");
+            addVisualResult(budgetFromDb.items[0].description === "Lavagem Premium", "mapBudgetFromDb: items estruturados preservados");
+
+            // 3. Mapeadores Supabase Configurações
+            const settingsMock = {
+                retentionDays: 90,
+                defaultPayment: "Cartão"
+            };
+            const dbSettings = mapSettingsToDb(settingsMock, userIdMock);
+            addVisualResult(dbSettings.retention_days === 90, "mapSettingsToDb: retentionDays mapeado para retention_days");
+            
+            const settingsFromDb = mapSettingsFromDb(dbSettings);
+            addVisualResult(settingsFromDb.retentionDays === 90, "mapSettingsFromDb: retention_days revertido para retentionDays");
+
+            // 4. Sequencial de Orçamentos
+            addVisualResult(getNextBudgetSequentialNumber([]) === "0001", "getNextBudgetSequentialNumber: gera 0001 se lista vazia");
+            
+            const listMock = [{ id: "b-0001" }, { id: "b-0002" }, { id: "b-0015" }];
+            addVisualResult(getNextBudgetSequentialNumber(listMock) === "0016", "getNextBudgetSequentialNumber: encontra o maior e incrementa para 0016");
+
+            // 5. Lógica de Totais
+            const itemsTest = [{ qtd: 2, unitValue: 150 }, { qtd: 1, unitValue: 400 }];
+            const calc1 = simulateBudgetCaclulate(itemsTest, 50);
+            addVisualResult(calc1.subtotal === 700, "simulateBudgetCaclulate: subtotal R$ 700,00 calculado");
+            addVisualResult(calc1.total === 650, "simulateBudgetCaclulate: total R$ 650,00 calculado (com desconto)");
+
+            // 6. Teste de Borda: Desconto Maior que Subtotal
+            const calc2 = simulateBudgetCaclulate(itemsTest, 850);
+            addVisualResult(calc2.total === 0, "simulateBudgetCaclulate: total impedido de ser negativo (travado em R$ 0,00)");
+
+            updateStatsUI();
+        }
+
+        // Executar imediatamente no load
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>
