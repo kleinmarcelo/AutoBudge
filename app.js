@@ -401,6 +401,7 @@ let currentFilterClient = ""; // Filtro ativo por pasta de cliente
 // 4. INICIALIZAÇÃO E CARREGAMENTO DE DADOS
 document.addEventListener("DOMContentLoaded", async () => {
     try {
+        setupAuthUI(); // Garante o funcionamento imediato dos cliques de Login/Cadastro na UI
         await dbService.init();
         
         if (isSupabaseConfigured && supabase) {
@@ -419,6 +420,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(err);
         showToast("Erro ao inicializar o banco de dados. Usando modo de demonstração local.", "warning");
         
+        setupAuthUI();
         if (isSupabaseConfigured && supabase) {
             setupEventListeners();
             initSupabaseAuth();
@@ -454,6 +456,32 @@ function showAuthForm(formId) {
         if (authTabs) authTabs.style.display = 'flex';
     } else {
         if (authTabs) authTabs.style.display = 'none';
+    }
+}
+
+function setupAuthUI() {
+    // Eventos Visuais de Abas e Redirecionamentos de Login/Cadastro
+    document.querySelectorAll('#authTabs .auth-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-target');
+            showAuthForm(target);
+        });
+    });
+
+    const linkForgot = document.getElementById('linkForgotPassword');
+    if (linkForgot) {
+        linkForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthForm('formForgotPassword');
+        });
+    }
+
+    const linkBack = document.getElementById('linkBackToLogin');
+    if (linkBack) {
+        linkBack.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthForm('formLogin');
+        });
     }
 }
 
@@ -643,30 +671,6 @@ function initSupabaseAuth() {
             populateClientSelects();
         }
     });
-
-    // 2. Eventos Visuais de Abas e Redirecionamentos
-    document.querySelectorAll('#authTabs .auth-tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.getAttribute('data-target');
-            showAuthForm(target);
-        });
-    });
-
-    const linkForgot = document.getElementById('linkForgotPassword');
-    if (linkForgot) {
-        linkForgot.addEventListener('click', (e) => {
-            e.preventDefault();
-            showAuthForm('formForgotPassword');
-        });
-    }
-
-    const linkBack = document.getElementById('linkBackToLogin');
-    if (linkBack) {
-        linkBack.addEventListener('click', (e) => {
-            e.preventDefault();
-            showAuthForm('formLogin');
-        });
-    }
 
     // 3. Submissão de Formulários de Autenticação
     const formLogin = document.getElementById('formLogin');
