@@ -14,6 +14,8 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <!-- Estilos Customizados -->
     <link rel="stylesheet" href="style.css">
+    <!-- SDK Oficial do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- html2pdf.js CDN (Carregado com defer) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5IfS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 </head>
@@ -51,6 +53,9 @@
                 <div class="company-mini-profile" id="miniCompanyProfile">
                     <!-- Preenchido via JS -->
                 </div>
+                <button type="button" class="btn-logout" id="btnLogout" title="Sair do aplicativo">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
+                </button>
             </div>
         </aside>
 
@@ -607,6 +612,121 @@
 
     <!-- Toast Notification (Mensagens rápidas e discretas) -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- TELA DE AUTENTICAÇÃO PREMIUM (SUPABASE) -->
+    <div class="auth-overlay open" id="authOverlay">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <img src="favicon.png" alt="AutoBudge Logo">
+                    </div>
+                    <h2>AutoBudge</h2>
+                    <p id="authSubtitle">Gerenciador de Orçamentos Automotivos Premium</p>
+                </div>
+                
+                <!-- Abas Login / Cadastro -->
+                <div class="auth-tabs" id="authTabs">
+                    <button type="button" class="auth-tab-btn active" data-target="formLogin">Login</button>
+                    <button type="button" class="auth-tab-btn" data-target="formRegister">Cadastrar Empresa</button>
+                </div>
+                
+                <div class="auth-body">
+                    <!-- Formulário de Login -->
+                    <form id="formLogin" class="auth-form active">
+                        <div class="form-group">
+                            <label for="loginEmail">E-mail Comercial <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="loginEmail" required placeholder="seuemail@empresa.com.br">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Senha <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" id="loginPassword" required placeholder="Digite sua senha">
+                            </div>
+                        </div>
+                        <div class="forgot-password-link">
+                            <a href="#" id="linkForgotPassword">Esqueceu sua senha?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fa-solid fa-right-to-bracket"></i> Entrar no Sistema
+                        </button>
+                    </form>
+                    
+                    <!-- Formulário de Cadastro (Registro) -->
+                    <form id="formRegister" class="auth-form">
+                        <div class="form-group">
+                            <label for="registerEmail">E-mail da Empresa <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="registerEmail" required placeholder="seuemail@empresa.com.br">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Senha de Acesso <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" id="registerPassword" required minlength="6" placeholder="Mínimo de 6 caracteres">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerCompanyName">Nome da Empresa <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-building"></i>
+                                <input type="text" id="registerCompanyName" required placeholder="Ex: Brilho Real Estética">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerCompanyPhone">Telefone / WhatsApp <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-phone"></i>
+                                <input type="text" id="registerCompanyPhone" required placeholder="Ex: (11) 99999-9999">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-full">
+                            <i class="fa-solid fa-user-plus"></i> Criar Conta & Ativar Banco
+                        </button>
+                    </form>
+                    
+                    <!-- Formulário de Recuperação de Senha (Esqueci minha senha) -->
+                    <form id="formForgotPassword" class="auth-form">
+                        <p class="auth-tip-text">Digite o e-mail cadastrado e enviaremos um link seguro para você redefinir sua senha.</p>
+                        <div class="form-group">
+                            <label for="resetEmail">E-mail Comercial <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="resetEmail" required placeholder="seuemail@empresa.com.br">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fa-solid fa-paper-plane"></i> Enviar Link de Recuperação
+                        </button>
+                        <div class="forgot-back-link">
+                            <a href="#" id="linkBackToLogin"><i class="fa-solid fa-arrow-left"></i> Voltar para o Login</a>
+                        </div>
+                    </form>
+                    
+                    <!-- Formulário de Redefinição de Senha (Nova Senha) -->
+                    <form id="formResetPassword" class="auth-form">
+                        <p class="auth-tip-text">Digite sua nova senha de acesso abaixo para atualizar sua conta.</p>
+                        <div class="form-group">
+                            <label for="newPassword">Nova Senha <span class="required">*</span></label>
+                            <div class="input-icon-group">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" id="newPassword" required minlength="6" placeholder="Mínimo de 6 caracteres">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-full">
+                            <i class="fa-solid fa-key"></i> Salvar Nova Senha
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts do Aplicativo -->
     <script src="app.js" defer></script>

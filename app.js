@@ -1,9 +1,248 @@
-/* ==========================================================================
-   AutoBudge - Sistema de Orçamentos Premium
-   Core Application Logic (app.js)
-   ========================================================================== */
+// 1. CONFIGURAÇÕES E INTEGRAÇÃO DO SUPABASE
+// Preencha as constantes abaixo com as credenciais obtidas no console do seu projeto Supabase para ativar a nuvem e RLS!
+const SUPABASE_URL = "SUA_SUPABASE_URL";
+const SUPABASE_KEY = "SUA_SUPABASE_ANON_KEY";
 
-// 1. DADOS DE DEMONSTRAÇÃO (MOCK) CASO LOCALSTORAGE ESTEJA VAZIO
+let supabase = null;
+const isSupabaseConfigured = SUPABASE_URL !== "" && SUPABASE_URL !== "SUA_SUPABASE_URL" && SUPABASE_KEY !== "" && SUPABASE_KEY !== "SUA_SUPABASE_ANON_KEY";
+
+if (isSupabaseConfigured) {
+    try {
+        supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log("Supabase inicializado com sucesso!");
+    } catch (e) {
+        console.error("Falha ao inicializar o SDK do Supabase:", e);
+    }
+}
+
+// Remapeadores de dados (camelCase do JS <-> snake_case do PostgreSQL)
+function mapClientToDb(client, userId) {
+    return {
+        id: client.id,
+        user_id: userId,
+        name: client.name,
+        phone: client.phone,
+        email: client.email || null,
+        vehicle_model: client.vehicleModel,
+        vehicle_plate: client.vehiclePlate,
+        vehicle_color: client.vehicleColor
+    };
+}
+
+function mapClientFromDb(dbClient) {
+    return {
+        id: dbClient.id,
+        name: dbClient.name,
+        phone: dbClient.phone,
+        email: dbClient.email || "",
+        vehicleModel: dbClient.vehicle_model,
+        vehiclePlate: dbClient.vehicle_plate,
+        vehicleColor: dbClient.vehicle_color
+    };
+}
+
+function mapBudgetToDb(budget, userId) {
+    return {
+        id: budget.id,
+        user_id: userId,
+        client_id: budget.clientId,
+        date: budget.date,
+        vehicle_model: budget.vehicleModel || null,
+        vehicle_plate: budget.vehiclePlate || null,
+        vehicle_color: budget.vehicleColor || null,
+        items: budget.items,
+        discount: Number(budget.discount) || 0,
+        total: Number(budget.total) || 0,
+        status: budget.status,
+        payment: budget.payment || null,
+        delivery: budget.delivery || null,
+        warranty: budget.warranty || null,
+        notice: budget.notice || null
+    };
+}
+
+function mapBudgetFromDb(dbBudget) {
+    return {
+        id: dbBudget.id,
+        clientId: dbBudget.client_id,
+        date: dbBudget.date,
+        vehicleModel: dbBudget.vehicle_model || "",
+        vehiclePlate: dbBudget.vehicle_plate || "",
+        vehicleColor: dbBudget.vehicle_color || "",
+        items: dbBudget.items,
+        discount: Number(dbBudget.discount) || 0,
+        total: Number(dbBudget.total) || 0,
+        status: dbBudget.status,
+        payment: dbBudget.payment || "",
+        delivery: dbBudget.delivery || "",
+        warranty: dbBudget.warranty || "",
+        notice: dbBudget.notice || ""
+    };
+}
+
+function mapCompanyToDb(comp, userId) {
+    return {
+        user_id: userId,
+        name: comp.name,
+        cnpj: comp.cnpj || null,
+        phone: comp.phone,
+        email: comp.email || null,
+        address: comp.address || null,
+        logo: comp.logo || null
+    };
+}
+
+function mapCompanyFromDb(dbComp) {
+    return {
+        name: dbComp.name || "",
+        cnpj: dbComp.cnpj || "",
+        phone: dbComp.phone || "",
+        email: dbComp.email || "",
+        address: dbComp.address || "",
+        logo: dbComp.logo || ""
+    };
+}
+
+function mapSettingsToDb(sett, userId) {
+    return {
+        user_id: userId,
+        retention_days: Number(sett.retentionDays) || 180,
+        default_payment: sett.defaultPayment || null,
+        default_delivery: sett.defaultDelivery || null,
+        default_warranty: sett.defaultWarranty || null,
+        default_notice: sett.defaultNotice || null
+    };
+}
+
+function mapSettingsFromDb(dbSett) {
+    return {
+        retentionDays: Number(dbSett.retention_days) || 180,
+        defaultPayment: dbSett.default_payment || "",
+        defaultDelivery: dbSett.default_delivery || "",
+        defaultWarranty: dbSett.default_warranty || "",
+        defaultNotice: dbSett.default_notice || ""
+    };
+}
+
+// Funções assíncronas de sincronização com o banco de dados na nuvem (Supabase)
+async function syncClientToCloud(client) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const userId = session.user.id;
+        const dbClient = mapClientToDb(client, userId);
+        
+        const { error } = await supabase
+            .from('clients')
+            .upsert(dbClient);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao sincronizar cliente na nuvem:", err);
+        showToast("Erro ao sincronizar cliente com a nuvem.", "warning");
+    }
+}
+
+async function deleteClientFromCloud(clientId) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const { error } = await supabase
+            .from('clients')
+            .delete()
+            .eq('id', clientId);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao excluir cliente na nuvem:", err);
+        showToast("Erro ao remover cliente da nuvem.", "warning");
+    }
+}
+
+async function syncBudgetToCloud(budget) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const userId = session.user.id;
+        const dbBudget = mapBudgetToDb(budget, userId);
+        
+        const { error } = await supabase
+            .from('budgets')
+            .upsert(dbBudget);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao sincronizar orçamento na nuvem:", err);
+        showToast("Erro ao sincronizar orçamento com a nuvem.", "warning");
+    }
+}
+
+async function deleteBudgetFromCloud(budgetId) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const { error } = await supabase
+            .from('budgets')
+            .delete()
+            .eq('id', budgetId);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao excluir orçamento na nuvem:", err);
+        showToast("Erro ao remover orçamento da nuvem.", "warning");
+    }
+}
+
+async function syncCompanyToCloud(companyData) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const userId = session.user.id;
+        const dbCompany = mapCompanyToDb(companyData, userId);
+        
+        const { error } = await supabase
+            .from('company_profiles')
+            .upsert(dbCompany);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao sincronizar empresa na nuvem:", err);
+        showToast("Erro ao salvar dados da empresa na nuvem.", "warning");
+    }
+}
+
+async function syncSettingsToCloud(settingsData) {
+    if (!isSupabaseConfigured || !supabase) return;
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        const userId = session.user.id;
+        const dbSettings = mapSettingsToDb(settingsData, userId);
+        
+        const { error } = await supabase
+            .from('system_settings')
+            .upsert(dbSettings);
+            
+        if (error) throw error;
+    } catch (err) {
+        console.error("Erro ao sincronizar configurações na nuvem:", err);
+        showToast("Erro ao salvar preferências na nuvem.", "warning");
+    }
+}
+
+// 2. DADOS DE DEMONSTRAÇÃO (MOCK) CASO LOCALSTORAGE ESTEJA VAZIO
+
 const mockCompany = {
     name: "Brilho Real Estética Automotiva",
     cnpj: "12.345.678/0001-90",
@@ -163,16 +402,391 @@ let currentFilterClient = ""; // Filtro ativo por pasta de cliente
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         await dbService.init();
-        await initApp();
-        setupEventListeners();
+        
+        if (isSupabaseConfigured && supabase) {
+            setupEventListeners();
+            initSupabaseAuth();
+        } else {
+            // Oculta o overlay de login se o Supabase não estiver configurado
+            const authOverlay = document.getElementById("authOverlay");
+            if (authOverlay) {
+                authOverlay.classList.remove("open");
+            }
+            await initApp();
+            setupEventListeners();
+        }
     } catch (err) {
         console.error(err);
-        showToast("Erro ao abrir banco de dados local robusto. Usando armazenamento padrão.", "warning");
-        // Fallback síncrono clássico caso IndexedDB falhe (segurança adicional)
-        initAppFallback();
-        setupEventListeners();
+        showToast("Erro ao inicializar o banco de dados. Usando modo de demonstração local.", "warning");
+        
+        if (isSupabaseConfigured && supabase) {
+            setupEventListeners();
+            initSupabaseAuth();
+        } else {
+            const authOverlay = document.getElementById("authOverlay");
+            if (authOverlay) {
+                authOverlay.classList.remove("open");
+            }
+            initAppFallback();
+            setupEventListeners();
+        }
     }
 });
+
+// FUNÇÕES DE AUTENTICAÇÃO E FLUXO DO SUPABASE
+function showAuthForm(formId) {
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.querySelectorAll('.auth-tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const form = document.getElementById(formId);
+    if (form) {
+        form.classList.add('active');
+    }
+    
+    const authTabs = document.getElementById('authTabs');
+    if (formId === 'formLogin') {
+        const tabBtn = document.querySelector('[data-target="formLogin"]');
+        if (tabBtn) tabBtn.classList.add('active');
+        if (authTabs) authTabs.style.display = 'flex';
+    } else if (formId === 'formRegister') {
+        const tabBtn = document.querySelector('[data-target="formRegister"]');
+        if (tabBtn) tabBtn.classList.add('active');
+        if (authTabs) authTabs.style.display = 'flex';
+    } else {
+        if (authTabs) authTabs.style.display = 'none';
+    }
+}
+
+function setAuthLoading(isLoading) {
+    const activeForm = document.querySelector('.auth-form.active');
+    if (!activeForm) return;
+    
+    const submitBtn = activeForm.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    
+    if (isLoading) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+    } else {
+        submitBtn.disabled = false;
+        if (submitBtn.dataset.originalHtml) {
+            submitBtn.innerHTML = submitBtn.dataset.originalHtml;
+        }
+    }
+}
+
+async function loadUserDataFromCloud(userId, userMetadata) {
+    showToast("Sincronizando dados em nuvem...", "info");
+    
+    try {
+        // A. Carregar perfil da empresa
+        let { data: dbComp, error: errComp } = await supabase
+            .from('company_profiles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+            
+        if (errComp) console.error("Erro ao carregar perfil na nuvem:", errComp);
+        
+        if (!dbComp) {
+            const companyName = userMetadata?.company_name || "Minha Empresa";
+            const companyPhone = userMetadata?.company_phone || "";
+            
+            const initialCompany = {
+                name: companyName,
+                cnpj: "",
+                phone: companyPhone,
+                email: (await supabase.auth.getUser()).data.user?.email || "",
+                address: "",
+                logo: ""
+            };
+            
+            const { data: insertedComp, error: errInsComp } = await supabase
+                .from('company_profiles')
+                .upsert(mapCompanyToDb(initialCompany, userId))
+                .select()
+                .single();
+                
+            if (errInsComp) {
+                console.error("Erro ao criar perfil de empresa padrão na nuvem:", errInsComp);
+                company = initialCompany;
+            } else {
+                company = mapCompanyFromDb(insertedComp);
+            }
+        } else {
+            company = mapCompanyFromDb(dbComp);
+        }
+        
+        await dbService.set("ab_company", company);
+
+        // B. Carregar preferências do sistema
+        let { data: dbSett, error: errSett } = await supabase
+            .from('system_settings')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+            
+        if (errSett) console.error("Erro ao carregar preferências na nuvem:", errSett);
+        
+        if (!dbSett) {
+            const { data: insertedSett, error: errInsSett } = await supabase
+                .from('system_settings')
+                .upsert(mapSettingsToDb(mockSettings, userId))
+                .select()
+                .single();
+                
+            if (errInsSett) {
+                console.error("Erro ao criar preferências padrão na nuvem:", errInsSett);
+                settings = mockSettings;
+            } else {
+                settings = mapSettingsFromDb(insertedSett);
+            }
+        } else {
+            settings = mapSettingsFromDb(dbSett);
+        }
+        
+        await dbService.set("ab_settings", settings);
+
+        // C. Carregar clientes
+        const { data: dbClients, error: errClients } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('user_id', userId);
+            
+        if (errClients) {
+            console.error("Erro ao buscar clientes na nuvem:", errClients);
+            clients = [];
+        } else {
+            clients = dbClients.map(mapClientFromDb);
+        }
+        
+        await dbService.set("ab_clients", clients);
+
+        // D. Carregar orçamentos
+        const { data: dbBudgets, error: errBudgets } = await supabase
+            .from('budgets')
+            .select('*')
+            .eq('user_id', userId);
+            
+        if (errBudgets) {
+            console.error("Erro ao buscar orçamentos na nuvem:", errBudgets);
+            budgets = [];
+        } else {
+            budgets = dbBudgets.map(mapBudgetFromDb);
+        }
+        
+        await dbService.set("ab_budgets", budgets);
+        
+        // Executa retenção local e sincroniza se necessário
+        runRetentionCheck();
+
+        // Atualiza UIs principais
+        updateMiniProfile();
+        populateCompanyConfigForm();
+        populateSettingsForm();
+        
+        // Renderiza dados nas abas
+        renderDashboard();
+        renderBudgetsTable();
+        renderClientsTable();
+        populateClientSelects();
+        
+        showToast("Dados sincronizados com sucesso!", "success");
+    } catch (err) {
+        console.error("Erro geral na sincronização:", err);
+        showToast("Erro ao sincronizar dados da nuvem. O aplicativo funcionará no modo de cache local.", "warning");
+    }
+}
+
+function initSupabaseAuth() {
+    // 1. Ouvinte do Estado de Autenticação do Supabase
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log("Supabase Auth Event:", event, session);
+        const authOverlay = document.getElementById("authOverlay");
+        
+        if (session && session.user) {
+            if (authOverlay) {
+                authOverlay.classList.remove("open");
+            }
+            
+            if (event === 'PASSWORD_RECOVERY') {
+                if (authOverlay) {
+                    authOverlay.classList.add("open");
+                }
+                showAuthForm('formResetPassword');
+                return;
+            }
+            
+            await loadUserDataFromCloud(session.user.id, session.user.user_metadata);
+        } else {
+            if (authOverlay) {
+                authOverlay.classList.add("open");
+            }
+            
+            if (window.location.hash.includes("type=recovery") || window.location.href.includes("type=recovery")) {
+                showAuthForm('formResetPassword');
+            } else {
+                showAuthForm('formLogin');
+            }
+            
+            // Limpa dados locais por privacidade ao sair
+            company = {};
+            settings = {};
+            clients = [];
+            budgets = [];
+            
+            updateMiniProfile();
+            renderDashboard();
+            renderBudgetsTable();
+            renderClientsTable();
+            populateClientSelects();
+        }
+    });
+
+    // 2. Eventos Visuais de Abas e Redirecionamentos
+    document.querySelectorAll('#authTabs .auth-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-target');
+            showAuthForm(target);
+        });
+    });
+
+    const linkForgot = document.getElementById('linkForgotPassword');
+    if (linkForgot) {
+        linkForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthForm('formForgotPassword');
+        });
+    }
+
+    const linkBack = document.getElementById('linkBackToLogin');
+    if (linkBack) {
+        linkBack.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAuthForm('formLogin');
+        });
+    }
+
+    // 3. Submissão de Formulários de Autenticação
+    const formLogin = document.getElementById('formLogin');
+    if (formLogin) {
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            setAuthLoading(true);
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            setAuthLoading(false);
+            
+            if (error) {
+                showToast("Erro ao entrar: " + error.message, "danger");
+            } else {
+                showToast("Seja bem-vindo de volta!", "success");
+            }
+        });
+    }
+
+    const formRegister = document.getElementById('formRegister');
+    if (formRegister) {
+        formRegister.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const companyName = document.getElementById('registerCompanyName').value.trim();
+            const companyPhone = document.getElementById('registerCompanyPhone').value.trim();
+            
+            setAuthLoading(true);
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        company_name: companyName,
+                        company_phone: companyPhone
+                    }
+                }
+            });
+            setAuthLoading(false);
+            
+            if (error) {
+                showToast("Erro ao cadastrar: " + error.message, "danger");
+            } else {
+                showToast("Empresa cadastrada com sucesso!", "success");
+                if (data && data.session) {
+                    // Logado automaticamente
+                } else {
+                    showToast("Por favor, verifique o e-mail de confirmação ou faça o login.", "info");
+                    showAuthForm('formLogin');
+                }
+            }
+        });
+    }
+
+    const formForgotPassword = document.getElementById('formForgotPassword');
+    if (formForgotPassword) {
+        formForgotPassword.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value.trim();
+            
+            setAuthLoading(true);
+            const redirectToUrl = window.location.origin + window.location.pathname;
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: redirectToUrl
+            });
+            setAuthLoading(false);
+            
+            if (error) {
+                showToast("Erro ao enviar link: " + error.message, "danger");
+            } else {
+                showToast("Link de recuperação enviado com sucesso para seu e-mail!", "success");
+                showAuthForm('formLogin');
+            }
+        });
+    }
+
+    const formResetPassword = document.getElementById('formResetPassword');
+    if (formResetPassword) {
+        formResetPassword.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            
+            setAuthLoading(true);
+            const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+            setAuthLoading(false);
+            
+            if (error) {
+                showToast("Erro ao redefinir senha: " + error.message, "danger");
+            } else {
+                showToast("Senha redefinida com sucesso! Acessando sistema...", "success");
+                // Remove o token da URL por segurança
+                window.history.replaceState(null, null, window.location.pathname);
+                const authOverlay = document.getElementById("authOverlay");
+                if (authOverlay) {
+                    authOverlay.classList.remove("open");
+                }
+            }
+        });
+    }
+
+    // 4. Logout / Sair da Conta na Sidebar
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            if (confirm("Tem certeza que deseja sair de sua conta corporativa? Seus dados continuarão salvos de forma segura em nuvem.")) {
+                setAuthLoading(true);
+                const { error } = await supabase.auth.signOut();
+                setAuthLoading(false);
+                if (error) {
+                    showToast("Erro ao sair: " + error.message, "danger");
+                } else {
+                    showToast("Sessão finalizada com sucesso.", "success");
+                }
+            }
+        });
+    }
+}
 
 async function initApp() {
     // A. MIGRAR DADOS DO LOCALSTORAGE SE EXISTIREM (MIGRAÇÃO TRANSPARENTE E AUTOMÁTICA)
@@ -592,26 +1206,33 @@ function saveClientData(e) {
         return;
     }
 
+    let clientToSync = null;
+
     if (id) {
         // Editar existente
         clients = clients.map(c => {
             if (c.id === id) {
-                return { ...c, name, phone, email, vehicleModel, vehiclePlate, vehicleColor };
+                clientToSync = { ...c, name, phone, email, vehicleModel, vehiclePlate, vehicleColor };
+                return clientToSync;
             }
             return c;
         });
         showToast("Cliente atualizado com sucesso!", "success");
     } else {
         // Adicionar novo
-        const newClient = {
+        clientToSync = {
             id: "c-" + Date.now(),
             name, phone, email, vehicleModel, vehiclePlate, vehicleColor
         };
-        clients.push(newClient);
+        clients.push(clientToSync);
         showToast("Novo cliente cadastrado com sucesso!", "success");
     }
 
     saveData("ab_clients", clients);
+    if (clientToSync) {
+        syncClientToCloud(clientToSync); // Executa async em background
+    }
+    
     closeClientModal();
     renderClientsTable();
     populateClientSelects();
@@ -632,6 +1253,8 @@ function deleteClient(clientId) {
     if (confirm(msg)) {
         clients = clients.filter(c => c.id !== clientId);
         saveData("ab_clients", clients);
+        deleteClientFromCloud(clientId); // Executa async em background
+        
         showToast("Cliente removido com sucesso.", "warning");
         renderClientsTable();
         populateClientSelects();
@@ -916,14 +1539,17 @@ function saveBudgetData(e) {
     const subtotal = items.reduce((sum, item) => sum + (item.qtd * item.unitValue), 0);
     const total = subtotal - discount;
 
+    let budgetToSync = null;
+
     if (id) {
         // Edição
         budgets = budgets.map(b => {
             if (b.id === id) {
-                return {
+                budgetToSync = {
                     ...b, clientId, date, vehicleModel, vehiclePlate, vehicleColor,
                     items, discount, total, status, payment, delivery, warranty, notice
                 };
+                return budgetToSync;
             }
             return b;
         });
@@ -931,16 +1557,20 @@ function saveBudgetData(e) {
     } else {
         // Novo. Gerar número sequencial único
         const nextNum = getNextBudgetSequentialNumber();
-        const newBudget = {
+        budgetToSync = {
             id: `b-${nextNum}`,
             clientId, date, vehicleModel, vehiclePlate, vehicleColor,
             items, discount, total, status, payment, delivery, warranty, notice
         };
-        budgets.push(newBudget);
+        budgets.push(budgetToSync);
         showToast(`Orçamento Nº ${nextNum} criado com sucesso!`, "success");
     }
 
     saveData("ab_budgets", budgets);
+    if (budgetToSync) {
+        syncBudgetToCloud(budgetToSync); // Executa async em background
+    }
+    
     switchTab("dashboard");
 }
 
@@ -1005,6 +1635,8 @@ function deleteBudget(budgetId) {
     if (confirm(`Tem certeza que deseja remover permanentemente o orçamento Nº ${budgetId.replace('b-', '')}?`)) {
         budgets = budgets.filter(b => b.id !== budgetId);
         saveData("ab_budgets", budgets);
+        deleteBudgetFromCloud(budgetId); // Executa async em background
+        
         showToast("Orçamento removido com sucesso.", "warning");
         renderBudgetsTable();
         renderDashboard();
@@ -1079,6 +1711,8 @@ function saveCompanyData(e) {
 
     company = { ...company, name, cnpj, phone, email, address };
     saveData("ab_company", company);
+    syncCompanyToCloud(company); // Executa async em nuvem
+    
     updateMiniProfile();
     showToast("Dados da empresa salvos com sucesso!", "success");
 }
@@ -1125,6 +1759,8 @@ function saveSystemSettings(e) {
 
     settings = { retentionDays, defaultPayment, defaultDelivery, defaultWarranty, defaultNotice };
     saveData("ab_settings", settings);
+    syncSettingsToCloud(settings); // Executa async em nuvem
+    
     showToast("Preferências salvas com sucesso!", "success");
     
     // Executa verificação caso prazo tenha encolhido
