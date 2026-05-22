@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBudge - Sistema de Orçamentos Premium</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos Customizados -->
+    <link rel="stylesheet" href="style.css">
+    <!-- html2pdf.js CDN (Carregado com defer) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5IfS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar de Navegação -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <span class="brand-name">AutoBudge</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Painel</span>
+                </a>
+                <a href="#orçamentos" class="nav-item" data-tab="orcamentos">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Orçamentos</span>
+                </a>
+                <a href="#clientes" class="nav-item" data-tab="clientes">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="#configuracoes" class="nav-item" data-tab="configuracoes">
+                    <i class="fa-solid fa-gears"></i>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="company-mini-profile" id="miniCompanyProfile">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="pageTitle">Painel de Controle</h1>
+                    <p id="pageSubtitle">Bem-vindo de volta! Aqui está o resumo do seu negócio.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="btnQuickCreate">
+                        <i class="fa-solid fa-plus"></i> Novo Orçamento
+                    </button>
+                </div>
+            </header>
+
+            <!-- Seções / Abas -->
+            <div class="tab-content-wrapper">
+                
+                <!-- 1. ABA DASHBOARD -->
+                <section id="tab-dashboard" class="tab-section active">
+                    <!-- Painel de Métricas -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon open">
+                                <i class="fa-solid fa-folder-open"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Orçamentos em Aberto</span>
+                                <h3 class="metric-value" id="metricOpenBudgets">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon total">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Orçamentos Aprovados</span>
+                                <h3 class="metric-value" id="metricApprovedBudgets">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon clients">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Clientes Cadastrados</span>
+                                <h3 class="metric-value" id="metricTotalClients">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon value">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Valor Total (Mês)</span>
+                                <h3 class="metric-value" id="metricMonthlyValue">R$ 0,00</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Layout de duas colunas: Orçamentos em aberto e Pastas de Clientes -->
+                    <div class="dashboard-grid">
+                        <!-- Coluna 1: Orçamentos em Aberto -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h2><i class="fa-solid fa-clock-rotate-left"></i> Orçamentos Recentes em Aberto</h2>
+                                <a href="#orçamentos" class="card-header-link" onclick="switchTab('orcamentos')">Ver todos</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="data-table" id="tableRecentOpenBudgets">
+                                        <thead>
+                                            <tr>
+                                                <th>Nº</th>
+                                                <th>Cliente</th>
+                                                <th>Veículo</th>
+                                                <th>Data</th>
+                                                <th>Total</th>
+                                                <th class="actions-col">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                    <div class="empty-state" id="emptyRecentBudgets">
+                                        <i class="fa-solid fa-receipt"></i>
+                                        <p>Nenhum orçamento em aberto no momento.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Pastas de Clientes -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h2><i class="fa-solid fa-folder-closed"></i> Pastas de Clientes (A-Z)</h2>
+                                <a href="#clientes" class="card-header-link" onclick="switchTab('clientes')">Ver todos</a>
+                            </div>
+                            <div class="card-body">
+                                <div class="client-folders-grid" id="clientFoldersContainer">
+                                    <!-- Preenchido via JS -->
+                                </div>
+                                <div class="empty-state" id="emptyClientFolders">
+                                    <i class="fa-solid fa-users-slash"></i>
+                                    <p>Nenhum cliente cadastrado ainda.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. ABA ORÇAMENTOS (LISTAGEM GERAL) -->
+                <section id="tab-orcamentos" class="tab-section">
+                    <div class="card">
+                        <div class="card-toolbar">
+                            <div class="search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="searchBudgetInput" placeholder="Buscar orçamento por cliente, placa, número...">
+                            </div>
+                            <div class="filter-group">
+                                <select id="filterBudgetStatus">
+                                    <option value="all">Todos os Status</option>
+                                    <option value="Em Aberto">Em Aberto</option>
+                                    <option value="Aprovado">Aprovado</option>
+                                    <option value="Finalizado">Finalizado</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="data-table" id="tableAllBudgets">
+                                    <thead>
+                                        <tr>
+                                            <th>Nº</th>
+                                            <th>Cliente</th>
+                                            <th>Veículo (Placa)</th>
+                                            <th>Data Emissão</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th class="actions-col">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Preenchido via JS -->
+                                    </tbody>
+                                </table>
+                                <div class="empty-state" id="emptyAllBudgets">
+                                    <i class="fa-solid fa-receipt"></i>
+                                    <p>Nenhum orçamento encontrado.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. ABA CLIENTES (GERENCIAMENTO) -->
+                <section id="tab-clientes" class="tab-section">
+                    <div class="card">
+                        <div class="card-toolbar">
+                            <div class="search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="searchClientInput" placeholder="Buscar cliente por nome, placa, telefone...">
+                            </div>
+                            <button class="btn btn-primary" id="btnOpenAddClientModal">
+                                <i class="fa-solid fa-user-plus"></i> Adicionar Cliente
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="data-table" id="tableAllClients">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Contato</th>
+                                            <th>E-mail</th>
+                                            <th>Veículo Padrão</th>
+                                            <th>Placa / Cor</th>
+                                            <th class="actions-col">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Preenchido via JS -->
+                                    </tbody>
+                                </table>
+                                <div class="empty-state" id="emptyAllClients">
+                                    <i class="fa-solid fa-users-slash"></i>
+                                    <p>Nenhum cliente cadastrado. Clique em "Adicionar Cliente" para começar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. ABA CONFIGURAÇÕES -->
+                <section id="tab-configuracoes" class="tab-section">
+                    <div class="config-grid">
+                        
+                        <!-- Coluna 1: Minha Empresa -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2><i class="fa-solid fa-building"></i> Informações da Minha Empresa</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="formCompany">
+                                    <div class="company-logo-upload-container">
+                                        <div class="logo-preview-box" id="logoPreviewBox">
+                                            <i class="fa-solid fa-image"></i>
+                                            <span>Sua Logomarca</span>
+                                        </div>
+                                        <div class="upload-btn-wrapper">
+                                            <button type="button" class="btn btn-secondary btn-sm" id="btnUploadLogo">
+                                                <i class="fa-solid fa-upload"></i> Upload da Imagem
+                                            </button>
+                                            <input type="file" id="companyLogoInput" accept="image/*" style="display: none;">
+                                            <button type="button" class="btn btn-danger btn-sm" id="btnRemoveLogo" style="display: none;">
+                                                <i class="fa-solid fa-trash-can"></i> Remover
+                                            </button>
+                                            <p class="upload-tip">Formatos recomendados: PNG, JPG (proporções quadradas ou retangulares).</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-12">
+                                            <label for="companyName">Nome da Empresa <span class="required">*</span></label>
+                                            <input type="text" id="companyName" required placeholder="Ex: Brilho Intenso Estética Automotiva">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="companyCNPJ">CNPJ</label>
+                                            <input type="text" id="companyCNPJ" placeholder="Ex: 00.000.000/0001-00">
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="companyPhone">Telefone / WhatsApp <span class="required">*</span></label>
+                                            <input type="text" id="companyPhone" required placeholder="Ex: (11) 99999-9999">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-12">
+                                            <label for="companyEmail">E-mail Comercial</label>
+                                            <input type="email" id="companyEmail" placeholder="Ex: contato@empresa.com.br">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-12">
+                                            <label for="companyAddress">Endereço Completo</label>
+                                            <input type="text" id="companyAddress" placeholder="Ex: Av. Principal, 123, Bairro, Cidade - UF">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-full">
+                                        <i class="fa-solid fa-floppy-disk"></i> Salvar Dados da Empresa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Configurações do Sistema e Padrões -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2><i class="fa-solid fa-sliders"></i> Preferências do Sistema e PDF</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="formSystemSettings">
+                                    <div class="form-group">
+                                        <label for="retentionDays">Prazo de Retenção de Orçamentos <i class="fa-solid fa-circle-info" title="Período em dias que os orçamentos serão mantidos no sistema antes de expirar"></i></label>
+                                        <div class="input-unit-group">
+                                            <input type="number" id="retentionDays" min="0" value="180" placeholder="Ex: 180">
+                                            <span class="input-unit">dias</span>
+                                        </div>
+                                        <p class="form-tip">Digite 0 para manter todos os orçamentos indefinidamente.</p>
+                                    </div>
+
+                                    <hr class="form-divider">
+                                    
+                                    <h3>Textos Padrão (Observações e Condições)</h3>
+                                    <div class="form-group">
+                                        <label for="defaultPayment">Formas de Pagamento Aceitas</label>
+                                        <textarea id="defaultPayment" rows="2" placeholder="Ex: Pix, Cartão de Crédito (até 3x sem juros) ou Dinheiro"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="defaultDelivery">Prazo de Entrega Padrão</label>
+                                        <input type="text" id="defaultDelivery" placeholder="Ex: 2 dias úteis após a aprovação">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="defaultWarranty">Garantia dos Serviços Padrão</label>
+                                        <input type="text" id="defaultWarranty" placeholder="Ex: 3 meses para serviços de proteção de pintura">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="defaultNotice">Aviso Padrão (Rodapé)</label>
+                                        <textarea id="defaultNotice" rows="2" placeholder="Ex: Este orçamento pode sofrer alterações com o passar do tempo e está sujeito a revisão."></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success btn-full">
+                                        <i class="fa-solid fa-floppy-disk"></i> Salvar Preferências
+                                    </button>
+                                </form>
+
+                                <hr class="form-divider">
+
+                                <h3>Dados do Sistema</h3>
+                                <div class="system-backup-actions">
+                                    <button type="button" class="btn btn-secondary btn-full" id="btnExportBackup">
+                                        <i class="fa-solid fa-download"></i> Exportar Backup dos Dados (JSON)
+                                    </button>
+                                    <button type="button" class="btn btn-danger-outline btn-full" id="btnTriggerImport">
+                                        <i class="fa-solid fa-upload"></i> Importar Backup (Restaurar)
+                                    </button>
+                                    <input type="file" id="importBackupInput" accept=".json" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 5. ABA CRIAR / EDITAR ORÇAMENTO (INTERMEDIÁRIA) -->
+                <section id="tab-editorcamento" class="tab-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 id="budgetEditorTitle"><i class="fa-solid fa-file-invoice"></i> Criar Novo Orçamento</h2>
+                            <span class="budget-number-badge" id="editorBudgetNumberBadge">Rascunho</span>
+                        </div>
+                        <div class="card-body">
+                            <form id="formBudget">
+                                <input type="hidden" id="editBudgetId" value="">
+                                
+                                <div class="editor-section">
+                                    <h3>1. Selecionar Cliente</h3>
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="budgetSelectClient">Cliente <span class="required">*</span></label>
+                                            <div class="select-with-add">
+                                                <select id="budgetSelectClient" required>
+                                                    <option value="">Selecione um cliente cadastrado...</option>
+                                                    <!-- Preenchido via JS -->
+                                                </select>
+                                                <button type="button" class="btn btn-secondary" id="btnQuickAddClient" title="Cadastrar novo cliente rapidamente">
+                                                    <i class="fa-solid fa-user-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="budgetDate">Data de Emissão <span class="required">*</span></label>
+                                            <input type="date" id="budgetDate" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row" id="budgetClientDetailsBox" style="display: none;">
+                                        <!-- Informações resumidas do cliente selecionado aparecem aqui -->
+                                    </div>
+                                </div>
+
+                                <div class="editor-section">
+                                    <h3>2. Detalhes do Veículo (Opcional - sobrescreve o do cadastro se alterado)</h3>
+                                    <div class="form-row">
+                                        <div class="form-group col-4">
+                                            <label for="budgetVehicleModel">Veículo / Modelo</label>
+                                            <input type="text" id="budgetVehicleModel" placeholder="Ex: Honda Civic">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="budgetVehiclePlate">Placa</label>
+                                            <input type="text" id="budgetVehiclePlate" placeholder="Ex: ABC1D23">
+                                        </div>
+                                        <div class="form-group col-4">
+                                            <label for="budgetVehicleColor">Cor</label>
+                                            <input type="text" id="budgetVehicleColor" placeholder="Ex: Preto">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="editor-section">
+                                    <h3>3. Serviços e Produtos</h3>
+                                    <div class="table-responsive">
+                                        <table class="services-edit-table" id="tableBudgetItems">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 50px;">Item</th>
+                                                    <th>Descrição do Serviço / Produto <span class="required">*</span></th>
+                                                    <th style="width: 100px;">Qtd <span class="required">*</span></th>
+                                                    <th style="width: 160px;">V. Unitário (R$) <span class="required">*</span></th>
+                                                    <th style="width: 160px;">Total (R$)</th>
+                                                    <th style="width: 50px;" class="actions-col"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="budgetItemsBody">
+                                                <!-- Linhas de itens serão injetadas via JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="table-actions">
+                                        <button type="button" class="btn btn-secondary btn-sm" id="btnAddBudgetItem">
+                                            <i class="fa-solid fa-plus"></i> Adicionar Item
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="editor-section budget-totals-section">
+                                    <div class="totals-col">
+                                        <!-- Campo de Status -->
+                                        <div class="form-group" style="max-width: 250px;">
+                                            <label for="budgetStatus">Status do Orçamento</label>
+                                            <select id="budgetStatus" class="status-select">
+                                                <option value="Em Aberto" data-color="#e1a325">Em Aberto</option>
+                                                <option value="Aprovado" data-color="#2ecc71">Aprovado</option>
+                                                <option value="Finalizado" data-color="#3498db">Finalizado</option>
+                                                <option value="Cancelado" data-color="#e74c3c">Cancelado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="totals-col text-right">
+                                        <div class="totals-row">
+                                            <span>Subtotal:</span>
+                                            <span class="total-value" id="budgetSubtotal">R$ 0,00</span>
+                                        </div>
+                                        <div class="totals-row discount-row">
+                                            <label for="budgetDiscount">Desconto (R$):</label>
+                                            <input type="number" id="budgetDiscount" min="0" step="0.01" value="0.00">
+                                        </div>
+                                        <div class="totals-row grand-total-row">
+                                            <span>Valor Total:</span>
+                                            <span class="total-value highlight" id="budgetGrandTotal">R$ 0,00</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="editor-section">
+                                    <h3>4. Observações e Condições</h3>
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="budgetPayment">Formas de Pagamento Aceitas</label>
+                                            <textarea id="budgetPayment" rows="2" placeholder="Formas de pagamento..."></textarea>
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="budgetDelivery">Prazo Estimado para Entrega</label>
+                                            <input type="text" id="budgetDelivery" placeholder="Ex: 2 dias úteis após a aprovação">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-6">
+                                            <label for="budgetWarranty">Garantia dos Serviços</label>
+                                            <input type="text" id="budgetWarranty" placeholder="Ex: 3 meses para serviços de polimento">
+                                        </div>
+                                        <div class="form-group col-6">
+                                            <label for="budgetNotice">Aviso / Condição Geral</label>
+                                            <textarea id="budgetNotice" rows="2" placeholder="Avisos sobre o orçamento..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="editor-actions">
+                                    <button type="button" class="btn btn-secondary" id="btnCancelBudget">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa-solid fa-floppy-disk"></i> Salvar Orçamento
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL CLIENTE (CADASTRO / EDIÇÃO) -->
+    <div class="modal-overlay" id="modalClient">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="clientModalTitle">Cadastrar Novo Cliente</h2>
+                <button type="button" class="modal-close-btn" id="btnCloseClientModal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formClient">
+                    <input type="hidden" id="editClientId" value="">
+                    
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <label for="clientName">Nome Completo <span class="required">*</span></label>
+                            <input type="text" id="clientName" required placeholder="Ex: João da Silva">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="clientPhone">Telefone / WhatsApp <span class="required">*</span></label>
+                            <input type="text" id="clientPhone" required placeholder="Ex: (11) 99999-9999">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="clientEmail">E-mail</label>
+                            <input type="email" id="clientEmail" placeholder="Ex: joao@email.com">
+                        </div>
+                    </div>
+
+                    <h3 class="modal-sub-title"><i class="fa-solid fa-car"></i> Dados do Veículo Padrão</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <label for="clientVehicleModel">Veículo / Modelo <span class="required">*</span></label>
+                            <input type="text" id="clientVehicleModel" required placeholder="Ex: Honda Civic Sport">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="clientVehiclePlate">Placa <span class="required">*</span></label>
+                            <input type="text" id="clientVehiclePlate" required placeholder="Ex: ABC1D23">
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="clientVehicleColor">Cor <span class="required">*</span></label>
+                            <input type="text" id="clientVehicleColor" required placeholder="Ex: Preto Cristal">
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="btnCancelClientModal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveClient">Salvar Cliente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAÇÃO PRÉVIA DO PDF / ORÇAMENTO -->
+    <div class="modal-overlay modal-large" id="modalPreview">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Visualização do Orçamento</h2>
+                <div class="header-modal-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnDownloadPDF">
+                        <i class="fa-solid fa-file-pdf"></i> Baixar PDF
+                    </button>
+                    <button type="button" class="modal-close-btn" id="btnClosePreviewModal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body bg-light-preview">
+                <!-- Área reservada para exibição do layout idêntico ao impresso -->
+                <div class="pdf-scroll-container">
+                    <div id="pdfPrintArea" class="pdf-page-layout">
+                        <!-- Será preenchido dinamicamente pelo pdf.js -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Mensagens rápidas e discretas) -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts do Aplicativo -->
+    <script src="app.js" defer></script>
+    <script src="pdf.js" defer></script>
+</body>
+</html>
