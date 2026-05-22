@@ -1735,9 +1735,32 @@ textarea:focus {
 
 .input-icon-group input {
     padding-left: 2.75rem !important;
+    padding-right: 3rem !important;
 }
 
 .input-icon-group input:focus + i {
+    color: var(--primary);
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.btn-toggle-password:hover {
     color: var(--primary);
 }
 
