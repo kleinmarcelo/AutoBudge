@@ -8,7 +8,7 @@ const isSupabaseConfigured = SUPABASE_URL !== "" && SUPABASE_URL !== "SUA_SUPABA
 
 if (isSupabaseConfigured) {
     try {
-        supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log("Supabase inicializado com sucesso!");
     } catch (e) {
         console.error("Falha ao inicializar o SDK do Supabase:", e);
