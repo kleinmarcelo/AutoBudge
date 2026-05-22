@@ -2,7 +2,7 @@
 
 O **AutoBudge** é um aplicativo web Single Page Application (SPA) moderno, responsivo e esteticamente premium projetado especificamente para prestadores de serviços (como Estética Automotiva, detalhamento, mecânicas ou serviços gerais) gerenciarem seus clientes, criarem orçamentos profissionais e exportarem PDFs elegantes de alta qualidade.
 
-O aplicativo roda **100% no lado do cliente (offline-first)** utilizando o armazenamento local do navegador (`localStorage`) para persistir os dados da empresa, clientes e orçamentos de forma segura e imediata, sem necessidade de servidores ou bancos de dados externos.
+O aplicativo roda **100% no lado do cliente (offline-first)** utilizando o banco de dados interno e robusto do navegador (**IndexedDB**) para persistir os dados da empresa, clientes e orçamentos de forma segura, assíncrona e imediata, sem limite estreito de armazenamento e sem necessidade de servidores ou bancos de dados externos.
 
 ---
 
@@ -122,5 +122,5 @@ Agora que seus arquivos estão hospedados no GitHub, vamos publicar a aplicaçã
 ---
 
 > [!TIP]
-> **Dica Importante sobre Logomarcas**: 
-> Como os dados do aplicativo são armazenados localmente no seu próprio navegador (`localStorage`) que tem um limite de capacidade máxima aproximado de 5 Megabytes (MB), evite carregar arquivos de imagem excessivamente grandes no logotipo da empresa nas configurações. Prefira imagens comprimidas ou convertidas de até **500 Kilobytes (KB)**. Isso garante que você possa salvar milhares de clientes e orçamentos sem nunca esgotar o armazenamento local!
+> **Espaço de Armazenamento Expandido e Robusto**: 
+> Para resolver qualquer limitação de espaço, a persistência do **AutoBudge** foi estruturada utilizando a **IndexedDB** do navegador (com migração transparente e automática de dados antigos que estavam no `localStorage`). Isso fornece um espaço de armazenamento local massivo (determinado pelo espaço livre em disco da sua própria máquina, permitindo facilmente centenas de Megabytes ou Gigabytes). Agora, você pode carregar logomarcas pesadas e salvar dezenas de milhares de orçamentos e clientes sem preocupações com limites de cota!

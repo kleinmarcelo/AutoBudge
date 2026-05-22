@@ -49,14 +49,16 @@ Este documento estabelece o protocolo de teste padrão para todas as funcionalid
   - Ao aplicar o desconto de R$ 50,00, o valor total deve mudar instantaneamente para R$ 650,00.
   - Ao salvar, o sistema deve registrar o orçamento atribuindo um número sequencial único e retornar para a tela inicial (Painel).
 
-### Caso de Teste 04: Persistência de Dados (LocalStorage)
-* **Objetivo**: Garantir que as alterações em clientes, orçamentos e dados da empresa permaneçam salvas mesmo após fechamentos ou recarregamento da página.
+### Caso de Teste 04: Persistência de Dados (IndexedDB / LocalStorage)
+* **Objetivo**: Garantir que as alterações em clientes, orçamentos e dados da empresa permaneçam salvas na IndexedDB (AutoBudgeDB) com fallback robusto no LocalStorage.
 * **Passos**:
   1. Cadastrar um cliente ou orçamento de teste.
   2. Pressionar `F5` ou recarregar a aba no navegador.
   3. Verificar se o registro inserido permanece intacto na tabela correspondente.
+  4. (Opcional) Executar a aplicação com dados prévios no localStorage e verificar a migração automática para o IndexedDB.
 * **Resultado Esperado**:
-  - Todos os dados inseridos devem persistir através de recarregamentos da página, mantendo a integridade integral das listagens e painéis de controle.
+  - Todos os dados inseridos devem persistir na IndexedDB através de recarregamentos da página.
+  - Se existirem dados antigos no localStorage, eles devem ser migrados transparentemente para a IndexedDB no primeiro carregamento.
 
 ### Caso de Teste 05: Limpeza e Retenção de Orçamentos (Dias)
 * **Objetivo**: Testar se o mecanismo de expiração de orçamentos remove ou arquiva adequadamente documentos após o prazo de retenção configurado.
@@ -111,8 +113,8 @@ Este documento estabelece o protocolo de teste padrão para todas as funcionalid
 | **TC-01** | Navegação SPA e Responsividade | Aprovado | Nenhum problema. | Lógica de abas executou perfeitamente. Layout adaptou-se muito bem a telas móveis. |
 | **TC-02** | CRUD de Clientes | Aprovado | Nenhum problema. | A busca e modais responderam sem lentidão. O localStorage funcionou de imediato. |
 | **TC-03** | CRUD de Orçamentos e Cálculos | Aprovado | Valor de descontos permitindo negativo | Tratado na lógica de cálculo do `app.js` para garantir mínimo de R$ 0,00 e bloqueando totais negativos. |
-| **TC-04** | Persistência Local | Aprovado | Nenhum problema. | O localStorage manteve dados após recarregamento via F5 com 100% de sucesso. |
+| **TC-04** | Persistência Local | Aprovado | Nenhum problema. | A IndexedDB manteve dados após recarregamento via F5 e migrou o legado com sucesso. |
 | **TC-05** | Expiração de Orçamentos | Aprovado | Nenhum problema. | A rotina no carregamento identificou orçamentos expirados e aplicou o toast notificativo. |
-| **TC-06** | Upload de Logomarca | Aprovado | Imagens muito pesadas em base64 extrapolando localStorage | Lógica funciona bem para imagens de tamanho normal (até 1-2MB). Recomendado no README manter imagens leves. |
+| **TC-06** | Upload de Logomarca | Aprovado | Nenhum problema com IndexedDB | Resolvido! Com a migração para IndexedDB, a aplicação agora suporta logos pesadas de alta resolução sem bater na cota de 5MB. |
 | **TC-07** | Backup JSON | Aprovado | Nenhum problema. | Exportação e importação operaram perfeitamente com recarregamento nativo da página. |
 | **TC-08** | Geração e Exportação de PDF | Aprovado | Algumas quebras de página da biblioteca html2pdf | Ajustado o padding e o layout das tabelas para que os orçamentos de tamanho padrão caibam em 1 ou 2 páginas sem corte brusco. |

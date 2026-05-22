@@ -93,25 +93,115 @@ const mockBudgets = [
     }
 ];
 
-// 2. ESTADO GLOBAL DO APLICATIVO
+// 2. SERVIÇO DE BANCO DE DADOS LOCAL EXPANDIDO (IndexedDB)
+const dbService = {
+    db: null,
+    init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open("AutoBudgeDB", 1);
+            request.onerror = () => reject("Erro ao abrir IndexedDB.");
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve();
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("store")) {
+                    db.createObjectStore("store");
+                }
+            };
+        });
+    },
+    get(key, defaultValue) {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve(defaultValue);
+                return;
+            }
+            try {
+                const transaction = this.db.transaction("store", "readonly");
+                const objectStore = transaction.objectStore("store");
+                const request = objectStore.get(key);
+                request.onsuccess = () => {
+                    resolve(request.result !== undefined ? request.result : defaultValue);
+                };
+                request.onerror = () => {
+                    resolve(defaultValue);
+                };
+            } catch (err) {
+                resolve(defaultValue);
+            }
+        });
+    },
+    set(key, value) {
+        return new Promise((resolve, reject) => {
+            if (!this.db) {
+                reject("IndexedDB não inicializado.");
+                return;
+            }
+            try {
+                const transaction = this.db.transaction("store", "readwrite");
+                const objectStore = transaction.objectStore("store");
+                const request = objectStore.put(value, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject("Erro ao salvar dados no IndexedDB.");
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
+// 3. ESTADO GLOBAL DO APLICATIVO
 let company = {};
 let settings = {};
 let clients = [];
 let budgets = [];
 let currentFilterClient = ""; // Filtro ativo por pasta de cliente
 
-// 3. INICIALIZAÇÃO E CARREGAMENTO DE DADOS
-document.addEventListener("DOMContentLoaded", () => {
-    initApp();
-    setupEventListeners();
+// 4. INICIALIZAÇÃO E CARREGAMENTO DE DADOS
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        await dbService.init();
+        await initApp();
+        setupEventListeners();
+    } catch (err) {
+        console.error(err);
+        showToast("Erro ao abrir banco de dados local robusto. Usando armazenamento padrão.", "warning");
+        // Fallback síncrono clássico caso IndexedDB falhe (segurança adicional)
+        initAppFallback();
+        setupEventListeners();
+    }
 });
 
-function initApp() {
-    // Carrega do LocalStorage ou define Mocks
-    company = loadData("ab_company", mockCompany);
-    settings = loadData("ab_settings", mockSettings);
-    clients = loadData("ab_clients", mockClients);
-    budgets = loadData("ab_budgets", mockBudgets);
+async function initApp() {
+    // A. MIGRAR DADOS DO LOCALSTORAGE SE EXISTIREM (MIGRAÇÃO TRANSPARENTE E AUTOMÁTICA)
+    const legacyKeys = ["ab_company", "ab_settings", "ab_clients", "ab_budgets"];
+    let migratedAny = false;
+
+    for (const key of legacyKeys) {
+        const legacyVal = localStorage.getItem(key);
+        if (legacyVal) {
+            try {
+                const parsed = JSON.parse(legacyVal);
+                await dbService.set(key, parsed);
+                localStorage.removeItem(key);
+                migratedAny = true;
+            } catch (err) {
+                console.error("Falha ao migrar chave: " + key, err);
+            }
+        }
+    }
+
+    if (migratedAny) {
+        showToast("Banco de dados migrado com sucesso para armazenamento expandido ilimitado!", "success");
+    }
+
+    // B. CARREGAR DADOS DO BANCO DE DADOS ROBUSTO INDEXEDDB
+    company = await dbService.get("ab_company", mockCompany);
+    settings = await dbService.get("ab_settings", mockSettings);
+    clients = await dbService.get("ab_clients", mockClients);
+    budgets = await dbService.get("ab_budgets", mockBudgets);
     
     // Executa rotina de expiração de orçamentos (retenção)
     runRetentionCheck();
@@ -131,12 +221,35 @@ function initApp() {
     document.getElementById("budgetDate").value = new Date().toISOString().split('T')[0];
 }
 
-// Helpers de LocalStorage
-function saveData(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+// Fallback síncrono clássico caso IndexedDB falhe
+function initAppFallback() {
+    company = loadDataLegacy("ab_company", mockCompany);
+    settings = loadDataLegacy("ab_settings", mockSettings);
+    clients = loadDataLegacy("ab_clients", mockClients);
+    budgets = loadDataLegacy("ab_budgets", mockBudgets);
+    
+    runRetentionCheck();
+    updateMiniProfile();
+    populateCompanyConfigForm();
+    populateSettingsForm();
+    renderDashboard();
+    renderBudgetsTable();
+    renderClientsTable();
+    populateClientSelects();
+    document.getElementById("budgetDate").value = new Date().toISOString().split('T')[0];
 }
 
-function loadData(key, defaultData) {
+// Lógica de Persistência Baseada na IndexedDB
+function saveData(key, data) {
+    // Executa gravação assíncrona robusta em background sem travar a UI (Optimistic UI)
+    return dbService.set(key, data).catch(err => {
+        console.error("Erro ao salvar dado no IndexedDB: " + key, err);
+        // Fallback síncrono local no localStorage caso o IndexedDB pare de responder
+        localStorage.setItem(key, JSON.stringify(data));
+    });
+}
+
+function loadDataLegacy(key, defaultData) {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : defaultData;
 }
@@ -1052,16 +1165,16 @@ function importSystemBackup(e) {
 
     if (confirm("ATENÇÃO: Importar um backup irá sobrescrever TODOS os dados atuais do aplicativo! Deseja continuar?")) {
         const reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = async function(evt) {
             try {
                 const parsed = JSON.parse(evt.target.result);
                 
                 // Validação mínima da estrutura do backup
                 if (parsed.company && parsed.settings && Array.isArray(parsed.clients) && Array.isArray(parsed.budgets)) {
-                    saveData("ab_company", parsed.company);
-                    saveData("ab_settings", parsed.settings);
-                    saveData("ab_clients", parsed.clients);
-                    saveData("ab_budgets", parsed.budgets);
+                    await saveData("ab_company", parsed.company);
+                    await saveData("ab_settings", parsed.settings);
+                    await saveData("ab_clients", parsed.clients);
+                    await saveData("ab_budgets", parsed.budgets);
 
                     showToast("Backup importado com sucesso! Recarregando sistema...", "success");
                     
