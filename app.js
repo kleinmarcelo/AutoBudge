@@ -1,7 +1,7 @@
 // 1. CONFIGURAÇÕES E INTEGRAÇÃO DO SUPABASE
 // Preencha as constantes abaixo com as credenciais obtidas no console do seu projeto Supabase para ativar a nuvem e RLS!
-const SUPABASE_URL = "SUA_SUPABASE_URL";
-const SUPABASE_KEY = "SUA_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://iugehtybopstqobasuwm.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z2VodHlib3BzdHFvYmFzdXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODAxMzUsImV4cCI6MjA5NTA1NjEzNX0.lLdTxvEfzT4C6-BNDvcyOK9SJfQdblbakJDInYm8Xlc";
 
 let supabase = null;
 const isSupabaseConfigured = SUPABASE_URL !== "" && SUPABASE_URL !== "SUA_SUPABASE_URL" && SUPABASE_KEY !== "" && SUPABASE_KEY !== "SUA_SUPABASE_ANON_KEY";
