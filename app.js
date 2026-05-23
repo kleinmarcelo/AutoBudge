@@ -540,7 +540,6 @@ async function loadUserDataFromCloud(userId, userMetadata) {
         if (!dbComp) {
             const companyName = userMetadata?.company_name || "Minha Empresa";
             const companyPhone = userMetadata?.company_phone || "";
-            
             const initialCompany = {
                 name: companyName,
                 cnpj: "",
@@ -549,52 +548,40 @@ async function loadUserDataFromCloud(userId, userMetadata) {
                 address: "",
                 logo: ""
             };
-            
             const { data: insertedComp, error: errInsComp } = await supabaseClient
                 .from('company_profiles')
                 .upsert(mapCompanyToDb(initialCompany, userId))
                 .select()
                 .single();
-                
-            if (errInsComp) {
-                console.error("Erro ao criar perfil de empresa padrão na nuvem:", errInsComp);
-                company = initialCompany;
-            } else {
-                company = mapCompanyFromDb(insertedComp);
-            }
+            company = errInsComp ? initialCompany : mapCompanyFromDb(insertedComp);
+            await dbService.set("ab_company", company);
         } else {
             company = mapCompanyFromDb(dbComp);
+            await dbService.set("ab_company", company);
         }
-        
-        await dbService.set("ab_company", company);
 
-        // B. Carregar preferências do sistema
-        let { data: dbSett, error: errSett } = await supabaseClient
+        // B. Carregar/criar system settings
+        const { data: dbSett, error: errSett } = await supabaseClient
             .from('system_settings')
             .select('*')
             .eq('user_id', userId)
             .maybeSingle();
             
-        if (errSett) console.error("Erro ao carregar preferências na nuvem:", errSett);
-        
-        if (!dbSett) {
+        if (errSett) {
+            console.error("Erro ao buscar configurações na nuvem:", errSett);
+            settings = await dbService.get("ab_settings", {});
+        } else if (!dbSett) {
             const { data: insertedSett, error: errInsSett } = await supabaseClient
                 .from('system_settings')
                 .upsert(mapSettingsToDb(mockSettings, userId))
                 .select()
                 .single();
-                
-            if (errInsSett) {
-                console.error("Erro ao criar preferências padrão na nuvem:", errInsSett);
-                settings = mockSettings;
-            } else {
-                settings = mapSettingsFromDb(insertedSett);
-            }
+            settings = errInsSett ? mockSettings : mapSettingsFromDb(insertedSett);
+            await dbService.set("ab_settings", settings);
         } else {
             settings = mapSettingsFromDb(dbSett);
+            await dbService.set("ab_settings", settings);
         }
-        
-        await dbService.set("ab_settings", settings);
 
         // C. Carregar clientes
         const { data: dbClients, error: errClients } = await supabaseClient
@@ -604,12 +591,11 @@ async function loadUserDataFromCloud(userId, userMetadata) {
             
         if (errClients) {
             console.error("Erro ao buscar clientes na nuvem:", errClients);
-            clients = [];
+            clients = await dbService.get("ab_clients", []);
         } else {
             clients = dbClients.map(mapClientFromDb);
+            await dbService.set("ab_clients", clients);
         }
-        
-        await dbService.set("ab_clients", clients);
 
         // D. Carregar orçamentos
         const { data: dbBudgets, error: errBudgets } = await supabaseClient
@@ -619,12 +605,11 @@ async function loadUserDataFromCloud(userId, userMetadata) {
             
         if (errBudgets) {
             console.error("Erro ao buscar orçamentos na nuvem:", errBudgets);
-            budgets = [];
+            budgets = await dbService.get("ab_budgets", []);
         } else {
             budgets = dbBudgets.map(mapBudgetFromDb);
+            await dbService.set("ab_budgets", budgets);
         }
-        
-        await dbService.set("ab_budgets", budgets);
         
         // Executa retenção local e sincroniza se necessário
         runRetentionCheck();
