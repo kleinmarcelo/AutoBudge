@@ -1,6 +1,6 @@
 // 1. CONFIGURAÇÕES E INTEGRAÇÃO DO SUPABASE
 // Preencha as constantes abaixo com as credenciais obtidas no console do seu projeto Supabase para ativar a nuvem e RLS!
-const SUPABASE_URL = "https://iugehtybopstqobasuwm.supabaseClient.co";
+const SUPABASE_URL = "https://iugehtybopstqobasuwm.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z2VodHlib3BzdHFvYmFzdXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODAxMzUsImV4cCI6MjA5NTA1NjEzNX0.lLdTxvEfzT4C6-BNDvcyOK9SJfQdblbakJDInYm8Xlc";
 
 let supabaseClient = null;
@@ -8,10 +8,14 @@ const isSupabaseConfigured = SUPABASE_URL !== "" && SUPABASE_URL !== "SUA_SUPABA
 
 if (isSupabaseConfigured) {
     try {
-        supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        if (typeof supabase === 'undefined') {
+            throw new Error("O script do Supabase não foi carregado. Verifique sua conexão ou bloqueador de anúncios.");
+        }
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log("Supabase inicializado com sucesso!");
     } catch (e) {
         console.error("Falha ao inicializar o SDK do Supabase:", e);
+        alert("Erro no Supabase: " + e.message + "\n\nO aplicativo funcionará no modo offline por enquanto.");
     }
 }
 
@@ -793,13 +797,22 @@ function initSupabaseAuth() {
     // 4. Logout / Sair da Conta na Sidebar
     const btnLogout = document.getElementById('btnLogout');
     if (btnLogout) {
-        btnLogout.addEventListener('click', async () => {
+        btnLogout.addEventListener('click', async (e) => {
+            e.preventDefault();
             if (confirm("Tem certeza que deseja sair de sua conta corporativa? Seus dados continuarão salvos de forma segura em nuvem.")) {
+                if (!supabaseClient) {
+                    showToast("Sessão finalizada (Modo Offline).", "success");
+                    return;
+                }
                 setAuthLoading(true);
                 const { error } = await supabaseClient.auth.signOut();
                 setAuthLoading(false);
+                
                 if (error) {
-                    showToast("Erro ao sair: " + error.message, "danger");
+                    console.error("Erro no signOut do Supabase:", error);
+                    // Força o logout local limpando o localStorage (onde o Supabase guarda o token)
+                    localStorage.clear();
+                    window.location.reload();
                 } else {
                     showToast("Sessão finalizada com sucesso.", "success");
                 }
