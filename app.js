@@ -1,14 +1,14 @@
 // 1. CONFIGURAÇÕES E INTEGRAÇÃO DO SUPABASE
 // Preencha as constantes abaixo com as credenciais obtidas no console do seu projeto Supabase para ativar a nuvem e RLS!
-const SUPABASE_URL = "https://iugehtybopstqobasuwm.supabase.co";
+const SUPABASE_URL = "https://iugehtybopstqobasuwm.supabaseClient.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z2VodHlib3BzdHFvYmFzdXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0ODAxMzUsImV4cCI6MjA5NTA1NjEzNX0.lLdTxvEfzT4C6-BNDvcyOK9SJfQdblbakJDInYm8Xlc";
 
-let supabase = null;
+let supabaseClient = null;
 const isSupabaseConfigured = SUPABASE_URL !== "" && SUPABASE_URL !== "SUA_SUPABASE_URL" && SUPABASE_KEY !== "" && SUPABASE_KEY !== "SUA_SUPABASE_ANON_KEY";
 
 if (isSupabaseConfigured) {
     try {
-        supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log("Supabase inicializado com sucesso!");
     } catch (e) {
         console.error("Falha ao inicializar o SDK do Supabase:", e);
@@ -126,15 +126,15 @@ function mapSettingsFromDb(dbSett) {
 
 // Funções assíncronas de sincronização com o banco de dados na nuvem (Supabase)
 async function syncClientToCloud(client) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
         const userId = session.user.id;
         const dbClient = mapClientToDb(client, userId);
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('clients')
             .upsert(dbClient);
             
@@ -146,12 +146,12 @@ async function syncClientToCloud(client) {
 }
 
 async function deleteClientFromCloud(clientId) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('clients')
             .delete()
             .eq('id', clientId);
@@ -164,15 +164,15 @@ async function deleteClientFromCloud(clientId) {
 }
 
 async function syncBudgetToCloud(budget) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
         const userId = session.user.id;
         const dbBudget = mapBudgetToDb(budget, userId);
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('budgets')
             .upsert(dbBudget);
             
@@ -184,12 +184,12 @@ async function syncBudgetToCloud(budget) {
 }
 
 async function deleteBudgetFromCloud(budgetId) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('budgets')
             .delete()
             .eq('id', budgetId);
@@ -202,15 +202,15 @@ async function deleteBudgetFromCloud(budgetId) {
 }
 
 async function syncCompanyToCloud(companyData) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
         const userId = session.user.id;
         const dbCompany = mapCompanyToDb(companyData, userId);
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('company_profiles')
             .upsert(dbCompany);
             
@@ -222,15 +222,15 @@ async function syncCompanyToCloud(companyData) {
 }
 
 async function syncSettingsToCloud(settingsData) {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabaseClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
         const userId = session.user.id;
         const dbSettings = mapSettingsToDb(settingsData, userId);
         
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('system_settings')
             .upsert(dbSettings);
             
@@ -404,7 +404,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         setupAuthUI(); // Garante o funcionamento imediato dos cliques de Login/Cadastro na UI
         await dbService.init();
         
-        if (isSupabaseConfigured && supabase) {
+        if (isSupabaseConfigured && supabaseClient) {
             setupEventListeners();
             initSupabaseAuth();
         } else {
@@ -421,7 +421,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast("Erro ao inicializar o banco de dados. Usando modo de demonstração local.", "warning");
         
         setupAuthUI();
-        if (isSupabaseConfigured && supabase) {
+        if (isSupabaseConfigured && supabaseClient) {
             setupEventListeners();
             initSupabaseAuth();
         } else {
@@ -525,7 +525,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
     
     try {
         // A. Carregar perfil da empresa
-        let { data: dbComp, error: errComp } = await supabase
+        let { data: dbComp, error: errComp } = await supabaseClient
             .from('company_profiles')
             .select('*')
             .eq('user_id', userId)
@@ -541,12 +541,12 @@ async function loadUserDataFromCloud(userId, userMetadata) {
                 name: companyName,
                 cnpj: "",
                 phone: companyPhone,
-                email: (await supabase.auth.getUser()).data.user?.email || "",
+                email: (await supabaseClient.auth.getUser()).data.user?.email || "",
                 address: "",
                 logo: ""
             };
             
-            const { data: insertedComp, error: errInsComp } = await supabase
+            const { data: insertedComp, error: errInsComp } = await supabaseClient
                 .from('company_profiles')
                 .upsert(mapCompanyToDb(initialCompany, userId))
                 .select()
@@ -565,7 +565,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
         await dbService.set("ab_company", company);
 
         // B. Carregar preferências do sistema
-        let { data: dbSett, error: errSett } = await supabase
+        let { data: dbSett, error: errSett } = await supabaseClient
             .from('system_settings')
             .select('*')
             .eq('user_id', userId)
@@ -574,7 +574,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
         if (errSett) console.error("Erro ao carregar preferências na nuvem:", errSett);
         
         if (!dbSett) {
-            const { data: insertedSett, error: errInsSett } = await supabase
+            const { data: insertedSett, error: errInsSett } = await supabaseClient
                 .from('system_settings')
                 .upsert(mapSettingsToDb(mockSettings, userId))
                 .select()
@@ -593,7 +593,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
         await dbService.set("ab_settings", settings);
 
         // C. Carregar clientes
-        const { data: dbClients, error: errClients } = await supabase
+        const { data: dbClients, error: errClients } = await supabaseClient
             .from('clients')
             .select('*')
             .eq('user_id', userId);
@@ -608,7 +608,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
         await dbService.set("ab_clients", clients);
 
         // D. Carregar orçamentos
-        const { data: dbBudgets, error: errBudgets } = await supabase
+        const { data: dbBudgets, error: errBudgets } = await supabaseClient
             .from('budgets')
             .select('*')
             .eq('user_id', userId);
@@ -645,7 +645,7 @@ async function loadUserDataFromCloud(userId, userMetadata) {
 
 function initSupabaseAuth() {
     // 1. Ouvinte do Estado de Autenticação do Supabase
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
         console.log("Supabase Auth Event:", event, session);
         const authOverlay = document.getElementById("authOverlay");
         
@@ -697,7 +697,7 @@ function initSupabaseAuth() {
             const password = document.getElementById('loginPassword').value;
             
             setAuthLoading(true);
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             setAuthLoading(false);
             
             if (error) {
@@ -718,7 +718,7 @@ function initSupabaseAuth() {
             const companyPhone = document.getElementById('registerCompanyPhone').value.trim();
             
             setAuthLoading(true);
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email,
                 password,
                 options: {
@@ -752,7 +752,7 @@ function initSupabaseAuth() {
             
             setAuthLoading(true);
             const redirectToUrl = window.location.origin + window.location.pathname;
-            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+            const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
                 redirectTo: redirectToUrl
             });
             setAuthLoading(false);
@@ -773,7 +773,7 @@ function initSupabaseAuth() {
             const newPassword = document.getElementById('newPassword').value;
             
             setAuthLoading(true);
-            const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+            const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
             setAuthLoading(false);
             
             if (error) {
@@ -796,7 +796,7 @@ function initSupabaseAuth() {
         btnLogout.addEventListener('click', async () => {
             if (confirm("Tem certeza que deseja sair de sua conta corporativa? Seus dados continuarão salvos de forma segura em nuvem.")) {
                 setAuthLoading(true);
-                const { error } = await supabase.auth.signOut();
+                const { error } = await supabaseClient.auth.signOut();
                 setAuthLoading(false);
                 if (error) {
                     showToast("Erro ao sair: " + error.message, "danger");
